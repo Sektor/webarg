@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>WebArg mplayer example</title>
+<script type="text/javascript" src="webarg.js"></script>
+<script type="text/javascript">
+var mplayerProc;
+function Init() {
+	mplayerProc = new WebargProcess(
+		"/usr/bin/mplayer", ["mplayer", "-slave", "-quiet", "-idle"],
+		function(body, attachment) {
+			if (body.event == event_exec) {
+				var logDiv = document.getElementById("info");
+				var info = (body.params.pid ?
+					"<font color='green'>mplayer online. pid:" + body.params.pid + "</font>" :
+					"<font color='red'>failed to start mplayer</font>");
+				logDiv.innerHTML = info;
+			}
+		}
+	);
+	var output = "";
+	var proc = new WebargProcess(
+		"/bin/sh", ["sh", "-c", "echo $HOME"],
+		function(body, attachment) {
+			if (body.event == event_output && body.params.stream == stream_stdout) {
+				output += attachment;
+			} else	if (body.event == event_exit) {
+				gui.folderInput.value = output.trim();
+				Scan();
+			}
+		}
+	);
+}
+function Scan() {
+	gui.fileSelector.innerHTML = "";
+	var output = "";
+	var homeDir = gui.folderInput.value;
+	var proc = new WebargProcess(
+		"/bin/sh", ["sh", "-c", "find " + homeDir + " -maxdepth 2 -name '*.mp3' -print"],
+		function(body, attachment) {
+			if (body.event == event_output && body.params.stream == stream_stdout) {
+				output += attachment;
+			} else if (body.event == event_exit) {
+				var files = output.split("\n");
+				for (var i = 0; i < files.length; i++) {
+					var file = files[i].trim();
+					if (file) {
+						var relName = file;
+						if (file.indexOf(homeDir) == 0) {
+							relName = file.substr(homeDir.length);
+							if (relName.indexOf("/") == 0)
+								relName = relName.substr(1);
+						}
+						var newElement = document.createElement("option");
+						newElement.text = relName;
+						newElement.value = file;
+						gui.fileSelector.add(newElement, null);
+					}
+				}
+			}
+		}
+	);
+}
+function Play() {
+	var selectedIndex = gui.fileSelector.selectedIndex;
+	var file = gui.fileSelector.options[selectedIndex].value;
+	mplayerProc.input("loadfile '" + file + "'\n");
+}
+function Stop() {
+	mplayerProc.input("stop\n");
+}
+</script>
+</head>
+<body onload="Init();">
+<form name="gui">
+Music folder:<br/>
+<input name="folderInput" type="input" value="/"><br/>
+<input type="button" value="Scan" onclick="Scan();"><br/>
+Found files:<br/>
+<select name="fileSelector" multiple="multiple">
+</select>
+<br/>
+<input type="button" value="Play" onclick="Play();">
+<input type="button" value="Stop" onclick="Stop();">
+<br/>
+Info:<br/>
+<div id="info"><font color="orange">mplayer offline</font></div>
+<br/>
+</form>
+</body>
+</html>
+

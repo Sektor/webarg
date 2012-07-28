@@ -1,0 +1,21 @@
+WebArg
+(C) 2012 Anton Olkhovik <ant007h@gmail.com>
+http://github.com/Sektor/WebArg
+
+WebArg is a WebSocket server that allows you to create Web-based UI for native
+applications.
+
+Building
+--------
+As usual:
+  $ ./autogen.sh
+  $ ./configure
+  $ make
+
+Running
+-------
+Start the server:
+  $ src/webarg
+Open this link in a browser:
+  http://localhost:7681/mplayer_example.html
+
